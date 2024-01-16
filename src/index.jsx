@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Button, Select, Slider } from 'antd';
-import mockData from './data';
 import Node from './base_node';
 import RelationEdge from './edge';
 import DagreCanvas from './dagre-canvas';
 import './index.less';
 import 'antd/dist/antd.css';
 import 'butterfly-dag/dist/index.css';
+
+import { fetchDataAndProcess } from './data'; // Import the function from data.js
 
 const Option = Select.Option;
 
@@ -16,39 +17,50 @@ class DagreLayout extends Component {
     super();
     this.canvas = null;
     this.state = {
+      graphData: null, // State to hold the fetched data
       addNodesStatus: true
     };
   }
 
-  componentDidMount() {
-    const root = document.getElementById('dag-canvas');
-    this.canvas = new DagreCanvas({
-      root: root,
-      disLinkable: true,
-      linkable: true,
-      draggable: true,
-      zoomable: true,
-      moveable: true,
-      layout: {
-        type: 'dagreLayout',
-        options: {
-          rankdir: 'TB',
-          nodesep: 40,
-          ranksep: 40,
-          controlPoints: false,
-        },
-      },
-      theme: {
-        edge: {
-          shapeType: 'AdvancedBezier',
-          arrow: true,
-          arrowPosition: 0.5,
-          Class: RelationEdge
+  async componentDidMount() {
+    try {
+      const data = await fetchDataAndProcess(); // Fetch the data
+      this.setState({ graphData: data }, () => {
+        const root = document.getElementById('dag-canvas');
+        this.canvas = new DagreCanvas({
+          root: root,
+          disLinkable: true,
+          linkable: true,
+          draggable: true,
+          zoomable: true,
+          moveable: true,
+          layout: {
+            type: 'dagreLayout',
+            options: {
+              rankdir: 'TB',
+              nodesep: 40,
+              ranksep: 40,
+              controlPoints: false,
+            },
+          },
+          theme: {
+            edge: {
+              shapeType: 'AdvancedBezier',
+              arrow: true,
+              arrowPosition: 0.5,
+              Class: RelationEdge
+            }
+          }
+        });
+        if (this.state.graphData) {
+          this.canvas.draw(this.state.graphData); // Draw the graph using the fetched data
         }
-      }
-    });
-    this.canvas.draw(mockData);
+      });
+    } catch (error) {
+      console.error('Error fetching graph data:', error);
+    }
   }
+
 
   // Add nodes
   addNodes = () => {
